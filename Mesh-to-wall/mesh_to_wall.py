@@ -21,7 +21,7 @@ bl_info = {
     "name": "Mesh to wall",
     "author": "luxuy_BlenderCN",
     "version": (0.8),
-    "blender": (2, 71, 0),
+    "blender": (2, 7, 0),
     "location": "View3D > EditMode > Mesh",
     "description": "Make wall from single mesh lines.",
     "wiki_url": "",
