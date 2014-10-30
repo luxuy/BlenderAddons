@@ -24,7 +24,7 @@ bl_info = {
     "blender": (2, 71, 0),
     "location": "View3D > EditMode > Mesh",
     "description": "Make wall from single mesh lines.",
-    "wiki_url": "http://luxuy.github.io/BlenderAddons/Mesh-to-wall/Mesh_to_wall.html",
+    "url": "http://luxuy.github.io/BlenderAddons/Mesh-to-wall/Mesh_to_wall.html",
     "category": "Mesh"} 
 
 import math,mathutils
@@ -87,29 +87,8 @@ def turn_left(bm,v1,v2,vm,wm):
         
         links.append(v_nxt)
     links.pop()
-        
-        
-        #size=len(link_verts(bm,links[-1]))
     return links
-def clock_p(bm,lp,vm,wm):
-    # verts=link_verts(bm,ver_index)
-    pt0=Vector((vm*wm*bm.verts[lp[0]].co)[0:2])
-    pt1=Vector((vm*wm*bm.verts[lp[1]].co)[0:2])
-    
-    pts=[Vector((vm*wm*bm.verts[i].co)[0:2]) for i in lp]
-    
-    vecs=[]
-    for i in range(len(pts)-1):
-        vecs.append(pts[i+1]-pts[i])
-    sum=0
-    # print(vecs)
-    for i in range(len(vecs)-1):
-        ang=vecs[i].angle_signed(vecs[i+1])
-        sum+=ang
-    ang=vecs[-1].angle_signed(vecs[0])
-    sum+=ang
-    #print(math.degrees(sum))
-    return sum  
+
 def lp_left(bm,lp,wid,vm,wm):
     # pass
     size=len(lp)
@@ -134,13 +113,14 @@ def lp_left(bm,lp,wid,vm,wm):
         vec2=pt-nxt
         
         mid=vec1.normalized()+vec2.normalized()
-       
-        if mid.length==0:
+        if mid.length<10e-4:
+           
             up2=Vector((0,0,1))
             mid=up2.cross(vec1)
+            
         else:
             xx=mid.cross(vec1).dot(up)
-            
+           
             if xx>0:
                 mid.negate()
         
@@ -150,9 +130,9 @@ def lp_left(bm,lp,wid,vm,wm):
             q_a= mathutils.Quaternion((0.0, 0.0, 1.0), math.radians(90.0))
             q_b= mathutils.Quaternion((0.0, 0.0, 1.0), math.radians(-180.0))
             mid.rotate(q_a)
-            pt1=pt+mid*wid  #/math.sin(3.14159*0.25)
+            pt1=pt+mid*wid 
             mid.rotate(q_b)
-            pt2=pt+mid*wid  #/math.sin(3.14159*0.25)
+            pt2=pt+mid*wid 
             new_vert_1=bm.verts.new(pt1)
             new_vert_2=bm.verts.new(pt2)
             lp_off.append([new_vert_1,new_vert_2])
@@ -195,6 +175,8 @@ class MeshtoWall(bpy.types.Operator):
     
     
     def execute(self, context):
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        bpy.ops.object.mode_set(mode = 'EDIT') 
         ob=bpy.context.object
         bm=bmesh.from_edit_mesh(ob.data)
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.003)
@@ -219,23 +201,16 @@ class MeshtoWall(bpy.types.Operator):
                 for i in verts:
                     
                     lp=turn_left(bm,j,i,vm,wm)
-                  
-                    clk=clock_p(bm,lp,vm,wm)
-                   
+     
                     bpy.ops.mesh.select_all(action='DESELECT')
-                    if clk<0:
-                 
-                        
-                        faces+=lp_left(bm,lp,self.wid*0.5,vm,wm)
-                        lp=[bm.verts[i] for i in lp]
-                        
-                        lp=lp[1:]
-              
-                        bpy.ops.mesh.select_all(action='DESELECT')
-                    else:
-                       
-                        #if self.c:
-                        faces+=lp_left(bm,lp,self.wid*0.5,vm,wm)
+           
+                    faces+=lp_left(bm,lp,self.wid*0.5,vm,wm)
+                    lp=[bm.verts[i] for i in lp]
+                    
+                    lp=lp[1:]
+          
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    
                        
         for f in faces:
             try:
@@ -243,8 +218,6 @@ class MeshtoWall(bpy.types.Operator):
             except:
                 pass
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.003)
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-      
         bm=bmesh.update_edit_mesh(ob.data,1,1)
         
         
